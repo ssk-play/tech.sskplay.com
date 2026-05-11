@@ -143,54 +143,13 @@ end
 
 ---
 
-## Legacy tap 미러링
+## Legacy tap 미러링 (선택)
 
-오래 전 `<org>/homebrew-<slug>` 같은 단일 앱 tap 으로 받아간 사용자를 위해, 새 tap (`<org>/homebrew-tap`) 의 cask 변경을 legacy tap 으로 자동 복제.
+옛 single-cask tap (`<org>/homebrew-<slug>`) 으로 이미 받아간 사용자를 위해, 새 멀티-캐스크 tap 의 cask 변경을 legacy tap 으로 자동 복제하는 GitHub Actions 워크플로를 운영할 수 있다. 워크플로 / PAT / 추가 절차 자세히는 → [homebrew-tap-mirror.md](./homebrew-tap-mirror.md)
 
-### Mirror 워크플로 (`homebrew-tap/.github/workflows/mirror-<slug>.yml`)
-
-```yaml
-on:
-  push:
-    branches: [main]
-    paths: ['Casks/<slug>.rb']
-  workflow_dispatch:
-
-jobs:
-  mirror:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { path: source }
-      - uses: actions/checkout@v4
-        with:
-          repository: <org>/homebrew-<slug>
-          path: legacy
-          token: ${{ secrets.LEGACY_TAP_PUSH_TOKEN }}
-      - working-directory: legacy
-        run: |
-          mkdir -p Casks
-          cp ../source/Casks/<slug>.rb Casks/<slug>.rb
-          if git diff --quiet Casks/<slug>.rb; then
-            exit 0
-          fi
-          VERSION=$(sed -nE 's/.*version "([^"]+)".*/\1/p' Casks/<slug>.rb | head -1)
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/<slug>.rb
-          git commit -m "Mirror <slug> v${VERSION:-unknown} from homebrew-tap"
-          git push
-```
-
-### 필요한 시크릿
-
-`<org>/homebrew-tap` 레포 시크릿에 다음을 등록:
-
-- `LEGACY_TAP_PUSH_TOKEN` — `<org>/homebrew-<slug>` 에 `contents: write` 권한이 있는 **fine-grained PAT**
-
-### 미러는 slug-agnostic
-
-워크플로가 cask 파일을 verbatim 복사하므로, 본 레포 `release-mac` 에서 슬러그/URL 만 바꿔도 legacy tap 까지 자동 전파된다. 따로 손댈 일 없음.
+요약:
+- mirror 워크플로는 cask 파일을 verbatim 복사 (slug-agnostic) — 본 레포 `release-mac` 만 잘 바꾸면 자동 전파
+- `release-mac` 이 release 부터 만들고 cask 를 마지막에 push 하는 순서이므로 mirror 가 fire 됐을 때 download URL 은 항상 유효
 
 ---
 
