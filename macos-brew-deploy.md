@@ -39,16 +39,17 @@ macos_companion/             # 또는 mac/, macos/ 등
 
 ## 버전 관리: `VERSION` + `bump-version`
 
-레포 루트의 `VERSION` 파일 한 줄 (`<semver>+<build>`, 예: `1.2.3+45`)이 모든 플랫폼의 단일 진실 소스. 매니페스트(Info.plist / gradle 등)는 빌드 직전에 VERSION 으로부터 덮어써짐.
+레포 루트의 `VERSION` 파일은 **semver 한 줄** (예: `1.2.3`). 모든 플랫폼이 이 semver 를 공유. 빌드 카운터는 **플랫폼 매니페스트가 권위** (macOS: Info.plist `CFBundleVersion`, Android: gradle `versionCode`) 라서 플랫폼별로 독립 증가.
 
-`bump-version` 스크립트가 VERSION 파일만 갱신하고 self-commit; manifest propagate 는 각 `release-<platform>` 의 책임. 모드 및 설계 근거 자세히는 → [bump-version.md](./bump-version.md)
+`bump-version` 은 VERSION (semver) 만 갱신하고 self-commit. semver propagate + build +1 은 각 `release-<platform>` 이 빌드 직전에 처리. 자세히는 → [bump-version.md](./bump-version.md)
 
 이 문서에서 자주 쓰는 명령:
 
 | 명령 | 용도 |
 |------|------|
-| `./bump-version --bump` | 기능 / 버그픽스 동반 시 (patch +1, build +1) |
-| `./bump-version --build-only` | 슬러그 / 배포 스크립트만 바꿨을 때 (build +1) |
+| `./bump-version --bump` | 기능 / 버그픽스 동반 (patch +1) |
+| `./bump-version <X.Y.Z>` | semver 명시 (minor / major bump) |
+| `./release-mac` 만 재실행 | semver 동일, build 만 +1 하고 재배포 |
 
 ---
 
@@ -57,8 +58,8 @@ macos_companion/             # 또는 mac/, macos/ 등
 ```
 1. (옵션) ./bump-version --bump          # --no-bump 면 건너뜀
 2. VERSION 읽어서 Info.plist 갱신:
-     CFBundleShortVersionString = <semver>
-     CFBundleVersion            = <build>
+     CFBundleShortVersionString = <semver>            (VERSION 으로부터)
+     CFBundleVersion            = <prev build> + 1    (자기 매니페스트로부터 +1)
    변경 있을 때만 커밋 ("Bump macOS to v<semver> (build <build>)")
 3. 빌드: (cd <mac-dir> && bash build.sh)
 4. 패킹: ditto -c -k --keepParent --sequesterRsrc \
@@ -69,6 +70,8 @@ macos_companion/             # 또는 mac/, macos/ 등
    (이미 존재하면 gh release upload --clobber + edit --draft=false)
 7. homebrew-tap 클론 → Casks/<slug>.rb 작성 → 커밋 → push
 ```
+
+핵심: build 카운터는 **매니페스트에서 읽어 +1** — VERSION 에 의존하지 않음. 다른 플랫폼이 따로 가도 무관.
 
 릴리스가 먼저 만들어지고 cask 파일이 나중에 push 되기 때문에, mirror 워크플로가 fire 됐을 때 cask 의 download URL 은 항상 유효하다.
 
@@ -159,14 +162,16 @@ end
 # 1. 코드/스크립트 변경 커밋
 git add ... && git commit -m "..."
 
-# 2. 버전 결정
-./bump-version --build-only        # 슬러그/배포 스크립트만 바꿨을 때
-./bump-version --bump              # 기능/버그픽스 동반
+# 2. semver 결정 (필요한 경우만)
+./bump-version --bump              # 기능/버그픽스 → patch +1
+./bump-version 2.0.0               # minor / major 변경
+#  (슬러그/배포 스크립트만 바꾼 재배포라면 semver 그대로 두고 2번 건너뜀)
 
-# 3. 빌드 + 배포 (mac 만)
-./release-mac --no-bump
+# 3. 빌드 + 배포 (mac 만) — build 카운터는 매니페스트에서 +1 됨
+./release-mac --no-bump            # semver 안 바꿀 때
+./release-mac                      # 동시에 bump-version --bump
 
-#    혹은 전체 (mac + android)
+#    혹은 전체 (mac + android) — 각 플랫폼이 자기 build +1
 ./release                          # 내부적으로 bump-version --bump 호출하므로 2번 건너뜀
 ```
 
