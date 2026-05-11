@@ -99,19 +99,9 @@ PAT 발급:
 
 ---
 
-## 사용자 입장에서의 흐름
+## 미러가 보장하는 것
 
-```bash
-# 옛 사용자 (legacy tap)
-brew tap <org>/<slug>            # 예: brew tap jobtools/airplay-touch
-brew upgrade --cask <slug>       # 새 URL/sha 가 자동 반영된 cask 사용
-
-# 새 사용자
-brew tap <org>/tap               # 멀티-캐스크 tap
-brew install --cask <slug>
-```
-
-옛 사용자가 굳이 `brew untap` / `brew tap <org>/tap` 으로 옮기지 않아도 정상 업그레이드.
+옛 사용자가 `<org>/homebrew-<slug>` 를 tap 한 상태 그대로 `brew upgrade` 만 돌려도 새 cask (새 URL / 새 sha256) 가 적용된다. `brew untap` / 재-tap 같은 사용자 측 마이그레이션이 필요 없음.
 
 ---
 

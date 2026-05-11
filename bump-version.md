@@ -107,49 +107,15 @@ echo "$SEMVER" > VERSION
 
 ---
 
-## `release-<platform>` 쪽에서 해야 할 일
+## `release-<platform>` 와의 계약
 
-`bump-version` 은 semver 만 관리하므로, 빌드 카운터 propagate 는 각 platform 스크립트가 빌드 직전에 처리:
+`bump-version` 이 VERSION 한 곳에 semver 만 보장하는 대신, 각 `release-<platform>` 스크립트는 **빌드 직전**에 다음을 책임진다:
 
-### macOS 예시 (release-mac)
+1. VERSION 에서 semver 를 읽어 자기 매니페스트의 사용자 가시 필드에 propagate (예: `CFBundleShortVersionString`, gradle `versionName`)
+2. 자기 매니페스트의 빌드 카운터 필드를 +1 (예: `CFBundleVersion`, gradle `versionCode`)
+3. 매니페스트가 실제로 변했을 때만 commit (`Bump <platform> to v<semver> (build <N>)`)
 
-```bash
-SEMVER="$(tr -d '[:space:]' < VERSION)"
-
-# 현재 build 읽기 → +1
-OLD_BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO_PLIST")"
-NEW_BUILD=$((OLD_BUILD + 1))
-
-# 두 키 덮어쓰기
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $SEMVER" "$INFO_PLIST"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD"          "$INFO_PLIST"
-
-# 변경 있을 때만 commit
-git add "$INFO_PLIST"
-if ! git diff --cached --quiet -- "$INFO_PLIST"; then
-    git commit -m "Bump macOS to v${SEMVER} (build ${NEW_BUILD})"
-fi
-```
-
-### Android 예시 (release-android)
-
-```bash
-SEMVER="$(tr -d '[:space:]' < VERSION)"
-
-# 현재 versionCode 읽기 → +1
-OLD_CODE="$(grep -E '^\s*versionCode\s' "$GRADLE" | awk '{print $2}')"
-NEW_CODE=$((OLD_CODE + 1))
-
-# 두 키 덮어쓰기
-sed -i.bak -E "s|(versionCode )[0-9]+|\1${NEW_CODE}|"     "$GRADLE"
-sed -i.bak -E "s|(versionName )\"[^\"]+\"|\1\"${SEMVER}\"|" "$GRADLE"
-rm -f "$GRADLE.bak"
-
-git add "$GRADLE"
-if ! git diff --cached --quiet -- "$GRADLE"; then
-    git commit -m "Bump Android to v${SEMVER} (build ${NEW_CODE})"
-fi
-```
+구현 코드는 각 플랫폼 배포 문서 참고 (macOS → [macos-brew-deploy.md](./macos-brew-deploy.md)).
 
 ---
 
