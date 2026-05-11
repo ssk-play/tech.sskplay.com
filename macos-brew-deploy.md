@@ -1,12 +1,12 @@
-# macOS 에이전트 Homebrew 배포 방식
+# macOS 에이전트 Homebrew 배포 패턴
 
-셀프-사인된 macOS 동반 앱(에이전트)을 Apple 공증 없이 사용자에게 안정적으로 전달하기 위한 배포 패턴. `airplay-touch`, `audiocast`, `audiocast-driver` 가 이 방식을 공유한다.
+셀프-사인된 macOS 동반 앱(에이전트)을 Apple 공증 없이 사용자에게 안정적으로 전달하기 위한 배포 패턴 정리. 현재 `airplay-touch`, `audiocast`, `audiocast-driver` 가 이 패턴을 공유한다.
 
 ## 큰 그림
 
 ```
-[로컬 빌드]                [GitHub: jobtools/homebrew-tap]              [사용자 머신]
-release-mac                  ├─ releases/<slug>-v<ver>/<App>-<ver>.zip   brew tap jobtools/tap
+[로컬 빌드]                [GitHub: <org>/homebrew-tap]                 [사용자 머신]
+release-mac                  ├─ releases/<slug>-v<ver>/<App>-<ver>.zip   brew tap <org>/tap
   ├─ build .app             │     └─ asset = self-signed .app.zip       brew install --cask <slug>
   ├─ pack ditto-zip         │                                            └─ postflight: xattr 제거
   ├─ gh release create  ────┤
@@ -16,49 +16,110 @@ release-mac                  ├─ releases/<slug>-v<ver>/<App>-<ver>.zip   bre
                       .github/workflows/mirror-<slug>.yml
                               │ verbatim 복사
                               ▼
-                  [GitHub: jobtools/homebrew-<slug>] (legacy tap)
+                   [GitHub: <org>/homebrew-<slug>] (legacy tap)
 ```
 
-## 단일 진실 소스: `VERSION` 파일
+## 디렉터리 / 파일 컨벤션
+
+앱 레포 기준:
+
+```
+VERSION                      # 1.2.3+45 (단일 소스)
+bump-version                 # VERSION 갱신 + self-commit
+release                      # 오케스트레이터 (mac + android)
+release-mac                  # macOS 전용 배포
+release-android              # Android 전용 배포 (해당 시)
+macos_companion/             # 또는 mac/, macos/ 등
+  ├─ <Target>/Info.plist
+  ├─ build.sh                # Swift Package 빌드 + codesign
+  └─ build/<App Name>.app    # 빌드 산출물
+```
+
+---
+
+## VERSION 단일 소스
 
 레포 루트에 한 줄짜리 `VERSION` 파일.
 
 ```
-1.1.25+30
+1.2.3+45
 ```
 
 - 형식: `<semver>+<build>` (semver 는 `X.Y.Z`, build 는 정수)
-- 모든 플랫폼(macOS / Android)이 이 파일을 읽어 자기 manifest 에 반영
+- **모든 플랫폼**(macOS / Android / 향후 iOS 등)이 이 파일을 읽어 자기 manifest 에 반영
 - 직접 편집하지 말고 `bump-version` 스크립트만 사용
 
-### `bump-version` 스크립트
+### 왜 build counter 를 VERSION 에 포함하는가
 
-VERSION 파일만 다루는 단일 책임 스크립트. 변경되면 자체적으로 커밋한다.
+흔한 대안은 매 빌드마다 plist / gradle 에서 build counter 를 max()+1 같은 식으로 동적 산출하는 것. 이 방식은:
 
-| 명령 | 효과 |
+- 빌드 환경마다(CI vs 로컬, 워크트리 여러 개) 카운터가 어긋남
+- VERSION 파일과 매니페스트가 따로 노는 stale state 가능
+
+`<semver>+<build>` 형식으로 VERSION 한 곳에 못박으면 진실 소스가 일원화된다. 매니페스트는 빌드 직전에 VERSION 으로부터 **덮어쓰기** 되므로 어긋날 수 없음.
+
+---
+
+## `bump-version` 스크립트 설계
+
+### 핵심 원칙: 책임 분리
+
+| 책임 | 담당 |
 |------|------|
-| `./bump-version` | 현재 버전 출력만 |
+| 버전 숫자 결정 (VERSION 파일 갱신) | `bump-version` |
+| 플랫폼 manifest 에 propagate | 각 `release-<platform>` (빌드 직전) |
+| VERSION 변경 commit | `bump-version` 자체 |
+| Manifest 변경 commit | 각 `release-<platform>` |
+| 오케스트레이션 (mac+android 순차 실행) | `release` |
+
+이 분리가 핵심인 이유:
+
+- `bump-version` 이 plist / gradle 까지 손대면 빌드 안 하는 플랫폼의 manifest 도 매번 흔들림
+- manifest propagate 가 빌드 **직전**에 일어나므로 stale manifest 가 VERSION 과 어긋날 수 없음
+- 오케스트레이터가 `git add -A` 로 통째로 커밋하지 않으므로 의도하지 않은 파일이 묻어 들어가지 않음
+
+### 모드
+
+| 명령 | 동작 |
+|------|------|
+| `./bump-version` | 현재 버전 출력만 (no-op) |
 | `./bump-version 1.2.0` | semver 명시적 지정, build +1 |
 | `./bump-version --bump` | 마지막 semver 세그먼트 +1, build +1 |
-| `./bump-version --build-only` | semver 유지, build 만 +1 (슬러그/스크립트 변경 등 코드 변경 없을 때) |
+| `./bump-version --build-only` | semver 유지, build 만 +1 |
 
-## 디렉터리 / 파일 컨벤션
+`--build-only` 용도: 슬러그/배포 스크립트만 바꿨거나 cask 만 다시 만들어야 할 때. 사용자가 받는 앱 동작은 동일하므로 semver 를 올리는 건 의미 과잉.
 
-레포 루트 기준:
+### Self-commit
 
+VERSION 이 실제로 변했을 때만 `Bump version to X.Y.Z+N` 메시지로 자체 커밋. 변경 없으면 무commit. 오케스트레이터가 `git add -A` 같은 광범위 커밋을 할 필요가 없어 안전.
+
+### SemVer 검증
+
+`^[0-9]+\.[0-9]+\.[0-9]+$` regex 로 검사. 비-SemVer 입력은 거부.
+
+### 동작 의사코드
+
+```bash
+# 입력: VERSION 한 줄 "<semver>+<build>"
+# 분해: SEMVER, BUILD ('+' 없으면 BUILD=0 으로 시작)
+
+case "$1" in
+    "")             # no-op
+    --bump)         # semver last++; build++
+    --build-only)   # build++ (semver 유지)
+    -h|--help)      # 헤더 주석 출력
+    *)              # explicit semver; build++
+esac
+
+# regex 검증 (semver, build 둘 다)
+echo "${SEMVER}+${BUILD}" > VERSION
+
+# git diff 가 변경 감지하면 자체 commit
 ```
-VERSION                    # 1.1.25+30
-bump-version               # VERSION 갱신 + 커밋
-release                    # 오케스트레이터 (mac + android)
-release-mac                # macOS 전용 배포
-release-android            # Android 전용 배포
-macos_companion/
-  ├─ AirPlayTouchCompanion/Info.plist
-  ├─ build.sh              # Swift Package 빌드 + codesign
-  └─ build/<App Name>.app  # 빌드 산출물
-```
 
-## `release-mac` 가 하는 일
+---
+
+## `release-mac` 단계별 동작
 
 ```
 1. (옵션) ./bump-version --bump          # --no-bump 면 건너뜀
@@ -66,21 +127,23 @@ macos_companion/
      CFBundleShortVersionString = <semver>
      CFBundleVersion            = <build>
    변경 있을 때만 커밋 ("Bump macOS to v<semver> (build <build>)")
-3. 빌드: (cd macos_companion && bash build.sh)
+3. 빌드: (cd <mac-dir> && bash build.sh)
 4. 패킹: ditto -c -k --keepParent --sequesterRsrc \
             "<App>.app" "<App>-<ver>.zip"
 5. sha256 계산
-6. gh release create <slug>-v<ver> --repo jobtools/homebrew-tap \
+6. gh release create <slug>-v<ver> --repo <org>/homebrew-tap \
         --title "macOS <ver>" --notes "..." <zip>
    (이미 존재하면 gh release upload --clobber + edit --draft=false)
 7. homebrew-tap 클론 → Casks/<slug>.rb 작성 → 커밋 → push
 ```
 
-이미 release 가 만들어진 뒤에 cask 파일이 푸시되기 때문에, mirror 워크플로가 fire 됐을 때 cask 의 URL 은 항상 유효하다.
+릴리스가 먼저 만들어지고 cask 파일이 나중에 push 되기 때문에, mirror 워크플로가 fire 됐을 때 cask 의 download URL 은 항상 유효하다.
+
+---
 
 ## 슬러그 / 태그 / 파일명 컨벤션
 
-`jobtools/homebrew-tap` 은 여러 앱을 호스팅하는 멀티-캐스크 tap. 충돌을 피하려면 **앱 슬러그 prefix** 가 필수.
+`<org>/homebrew-tap` 은 여러 앱을 호스팅하는 멀티-캐스크 tap. 충돌을 피하려면 **앱 슬러그 prefix** 가 필수.
 
 | 항목 | 컨벤션 | 예시 |
 |------|--------|------|
@@ -90,7 +153,9 @@ macos_companion/
 | cask 파일 | `Casks/<slug>.rb` | `Casks/airplay-touch.rb` |
 | Mirror 워크플로 | `.github/workflows/mirror-<slug>.yml` | `mirror-airplay-touch.yml` |
 
-⚠️ **하지 말 것**: generic 한 `mac-v*` 태그. 다른 macOS 앱과 슬롯이 충돌한다 (airplay-touch 가 처음에 이걸 쓰다가 audiocast 합류 후 `airplay-touch-v*` 로 이전한 이력 있음).
+⚠️ **하지 말 것**: generic 한 `mac-v*` 태그. 다른 macOS 앱과 슬롯이 충돌한다 (실제로 airplay-touch 가 처음에 `mac-v*` 로 시작했다가 audiocast 합류 후 `airplay-touch-v*` 로 이전해야 했던 이력 있음).
+
+---
 
 ## Cask 파일 템플릿
 
@@ -101,10 +166,10 @@ cask "<slug>" do
   version "<semver>"
   sha256  "<zip-sha256>"
 
-  url "https://github.com/jobtools/homebrew-tap/releases/download/<slug>-v#{version}/<App-Display-Name>-#{version}.zip"
+  url "https://github.com/<org>/homebrew-tap/releases/download/<slug>-v#{version}/<App-Display-Name>-#{version}.zip"
   name "<App Display Name>"
   desc "<한 줄 설명>"
-  homepage "https://github.com/jobtools/homebrew-tap"
+  homepage "https://github.com/<org>/homebrew-tap"
 
   depends_on macos: ">= :sonoma"
 
@@ -141,11 +206,13 @@ end
 
 - Apple Developer 공증($99/년) 없이도 사용자가 우클릭 → Open 안 하고 일반 설치 흐름으로 쓸 수 있게 하는 트릭
 - Homebrew 가 다운로드한 zip 에는 `com.apple.quarantine` xattr 이 붙는데, postflight 에서 이걸 벗기면 macOS Gatekeeper 가 첫 실행을 허락
-- 단, **사용자가 Homebrew 를 거쳐 받았다는 신뢰 체인** 위에서만 합당. 직접 zip URL 을 배포해선 안 됨
+- **사용자가 Homebrew 를 거쳐 받았다는 신뢰 체인** 위에서만 합당. 직접 zip URL 을 따로 배포해서는 안 됨
+
+---
 
 ## Legacy tap 미러링
 
-오래 전 `jobtools/homebrew-<slug>` 같은 단일 앱 tap 으로 받아간 사용자를 위해, 새 tap (`jobtools/homebrew-tap`) 의 cask 변경을 legacy tap 으로 자동 복제.
+오래 전 `<org>/homebrew-<slug>` 같은 단일 앱 tap 으로 받아간 사용자를 위해, 새 tap (`<org>/homebrew-tap`) 의 cask 변경을 legacy tap 으로 자동 복제.
 
 ### Mirror 워크플로 (`homebrew-tap/.github/workflows/mirror-<slug>.yml`)
 
@@ -164,7 +231,7 @@ jobs:
         with: { path: source }
       - uses: actions/checkout@v4
         with:
-          repository: jobtools/homebrew-<slug>
+          repository: <org>/homebrew-<slug>
           path: legacy
           token: ${{ secrets.LEGACY_TAP_PUSH_TOKEN }}
       - working-directory: legacy
@@ -184,13 +251,15 @@ jobs:
 
 ### 필요한 시크릿
 
-`jobtools/homebrew-tap` 레포 시크릿에 다음을 등록:
+`<org>/homebrew-tap` 레포 시크릿에 다음을 등록:
 
-- `LEGACY_TAP_PUSH_TOKEN` — `jobtools/homebrew-<slug>` 에 `contents: write` 권한이 있는 **fine-grained PAT**
+- `LEGACY_TAP_PUSH_TOKEN` — `<org>/homebrew-<slug>` 에 `contents: write` 권한이 있는 **fine-grained PAT**
 
 ### 미러는 slug-agnostic
 
 워크플로가 cask 파일을 verbatim 복사하므로, 본 레포 `release-mac` 에서 슬러그/URL 만 바꿔도 legacy tap 까지 자동 전파된다. 따로 손댈 일 없음.
+
+---
 
 ## 배포 절차 (체크리스트)
 
@@ -212,14 +281,16 @@ git add ... && git commit -m "..."
 릴리스 후 확인:
 
 ```bash
-gh release view <slug>-v<ver> --repo jobtools/homebrew-tap
-gh run list --repo jobtools/homebrew-tap --workflow mirror-<slug>.yml --limit 1
+gh release view <slug>-v<ver> --repo <org>/homebrew-tap
+gh run list --repo <org>/homebrew-tap --workflow mirror-<slug>.yml --limit 1
 ```
+
+---
 
 ## 사용자 설치 / 업그레이드
 
 ```bash
-brew tap jobtools/tap
+brew tap <org>/tap
 brew install --cask <slug>
 
 # 업그레이드
@@ -228,27 +299,112 @@ brew upgrade --cask <slug>
 
 기존에 legacy tap 으로 받은 사용자도 `brew upgrade` 한 번이면 자동으로 새 URL 의 zip 을 받는다 (mirror 가 cask 를 동기화해 두었으므로).
 
-## 새 macOS 앱을 이 tap 에 추가하는 절차
+---
 
-1. 앱 레포에 `VERSION`, `bump-version`, `release-mac`, `macos_companion/build.sh` 를 본 패턴대로 만든다 (`airplay-touch` 의 것을 복사해서 슬러그만 바꾸면 됨)
+## 새 macOS 앱을 이 패턴에 추가하는 절차
+
+1. 앱 레포에 `VERSION`, `bump-version`, `release-mac`, `<mac-dir>/build.sh` 를 본 패턴대로 만든다 (기존 앱 것을 복사해서 슬러그만 바꾸면 됨)
 2. `release-mac` 의 컨벤션 4개 (cask 이름, 태그 prefix, zip 이름, cask 내 URL) 가 모두 같은 슬러그를 쓰는지 검사
-3. `jobtools/homebrew-tap` 에:
+3. `<org>/homebrew-tap` 에:
    - `Casks/<new-slug>.rb` (최초 1회는 첫 release 가 자동 생성)
    - `.github/workflows/mirror-<new-slug>.yml` (legacy tap 운영하는 경우만)
-4. (legacy tap 필요한 경우) `jobtools/homebrew-<new-slug>` 레포 생성 + PAT 발급 + tap 레포 시크릿 등록
+4. (legacy tap 필요한 경우) `<org>/homebrew-<new-slug>` 레포 생성 + PAT 발급 + tap 레포 시크릿 등록
 5. 첫 `./release-mac` 실행
+
+---
 
 ## 함정과 교훈
 
 - **Generic 태그는 금지**. `mac-v*` 처럼 슬러그 없는 태그는 한 tap 에 두 번째 앱이 들어오는 순간 폭발. 처음부터 `<slug>-v*` 로 시작.
 - **순서 중요**: cask 푸시 전에 release 가 존재해야 한다. `release-mac` 은 이 순서를 지키지만 직접 수정할 때 헷갈리지 말 것.
-- **VERSION 단일 소스**. Info.plist 의 두 키는 빌드 직전에 VERSION 으로부터 덮어쓴다 — 절대 수동 편집하지 말 것 (커밋 충돌의 원인이 되었음).
-- **Sequester rsrc 옵션**. `ditto -c -k --keepParent --sequesterRsrc` 가 핵심. Finder 의 압축이나 zip 명령은 macOS 메타데이터를 잃을 수 있어 cask 가 못 푼다.
+- **VERSION 단일 소스**. Info.plist 의 두 키는 빌드 직전에 VERSION 으로부터 덮어쓴다 — 절대 수동 편집하지 말 것 (커밋 충돌의 원인).
+- **bump-version 은 VERSION 만 만진다**. plist / gradle 까지 손대게 만들면 빌드 안 한 플랫폼의 manifest 가 매번 흔들림.
+- **Sequester rsrc 옵션 필수**. `ditto -c -k --keepParent --sequesterRsrc` 가 핵심. Finder 의 압축이나 zip 명령은 macOS 메타데이터를 잃을 수 있어 cask 가 못 푼다.
 - **xattr 제거는 사용자 신뢰의 대가**. brew 가 sha256 으로 무결성을 보장한다는 가정 하에서만 정당. 다른 채널로 zip 뿌리지 말 것.
 - **build 카운터는 단조 증가**. App Store / 다른 스토어와 공유될 수 있으므로 `--build-only` 라도 항상 +1.
 
+---
+
+## 추후 개선 후보 (`bump-version` 스크립트)
+
+스크립트 안에서 끝나는 개선만 (release-* 나 git tag 같은 외부 책임 제외).
+
+### 1. atomic write 🔴
+
+현재 `echo "$X" > VERSION_FILE` 직접 redirect. 디스크 가득 차거나 SIGINT 들어오면 VERSION 이 빈/잘린 상태로 남을 수 있음.
+
+```bash
+TMP="$(mktemp "${VERSION_FILE}.XXXXXX")"
+echo "${SEMVER}+${BUILD}" > "$TMP"
+mv "$TMP" "$VERSION_FILE"
+```
+
+### 2. semver 단위 별 bump 🟡
+
+현재 `--bump` 는 patch 만 올림. minor/major 올릴 때 사용자가 직접 `./bump-version 2.0.0` 입력 → 타이핑 실수 위험.
+
+```bash
+--bump | --bump-patch)  PARTS[2]=$((PARTS[2]+1)) ;;
+--bump-minor)           PARTS[2]=0; PARTS[1]=$((PARTS[1]+1)) ;;
+--bump-major)           PARTS[2]=0; PARTS[1]=0; PARTS[0]=$((PARTS[0]+1)) ;;
+```
+
+### 3. no-op 명시 감지 🟡
+
+`./bump-version 1.2.3` 시 현재 VERSION 도 `1.2.3+N` 이면 현재 동작은 build+=1. 의도가 "버전 그대로 유지" 인 경우가 많음.
+
+```bash
+if [[ "$1" == "$SEMVER" ]]; then
+    echo ">> Already at $SEMVER. Use --build-only to bump build only." >&2
+    exit 0
+fi
+```
+
+### 4. `--set <semver>+<build>` 🟢
+
+핫픽스 backport / 수동 정정 시 build 까지 통째로 지정.
+
+```bash
+--set)
+    LINE="$2"
+    SEMVER="${LINE%%+*}"
+    BUILD="${LINE#*+}"
+    shift
+    ;;
+```
+
+### 5. `--print` / `--json` 🟢
+
+CI / 다른 스크립트가 현재 버전 파싱.
+
+```bash
+--print)  echo "${SEMVER}+${BUILD}"; exit 0 ;;
+--json)   printf '{"semver":"%s","build":%s}\n' "$SEMVER" "$BUILD"; exit 0 ;;
+```
+
+### 6. `--dry-run` 🟢
+
+VERSION 에 쓰지도, commit 도 안 하고 결과만 표시.
+
+### 7. CI 빌드 번호 override 🟢
+
+GitHub Actions `GITHUB_RUN_NUMBER` 같은 monotonic 카운터를 build 로 쓰면 머신 간 충돌 자연 해소.
+
+```bash
+BUILD="${CI_BUILD_NUMBER:-$BUILD}"
+```
+
+| 등급 | 항목 | 이유 |
+|------|------|------|
+| 🔴 | 1 atomic write | 한 번 corrupt 되면 손 복구 필요, 비용 거의 없음 |
+| 🟡 | 2 semver 단위 bump, 3 no-op 감지 | 자주 쓰는 흐름, 의도 vs 결과 불일치 줄임 |
+| 🟢 | 4–7 | 편의 / 자동화 |
+
+---
+
 ## 참고 위치
 
-- 코드: `~/work/airplay_touch/{release,release-mac,bump-version,VERSION}`, `~/work/audiocast/{release,release-mac,...}`
+- 패턴 적용 레포: `~/work/airplay_touch`, `~/work/audiocast`, `~/work/audiocast-driver`
+- 주요 스크립트: `{release, release-mac, release-android, bump-version, VERSION}`
 - Tap 레포: <https://github.com/jobtools/homebrew-tap>
-- Legacy tap (airplay-touch): <https://github.com/jobtools/homebrew-airplay-touch>
+- Legacy tap 예: <https://github.com/jobtools/homebrew-airplay-touch>
