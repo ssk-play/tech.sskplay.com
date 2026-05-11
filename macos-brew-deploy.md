@@ -24,10 +24,10 @@ release-mac                  ├─ releases/<slug>-v<ver>/<App>-<ver>.zip   bre
 앱 레포 기준:
 
 ```
-VERSION                      # 1.2.3+45 (단일 소스)
-bump-version                 # VERSION 갱신 + self-commit
+VERSION                      # 버전 소스   → bump-version.md
+bump-version                 # 버전 갱신   → bump-version.md
 release                      # 오케스트레이터 (mac + android)
-release-mac                  # macOS 전용 배포
+release-mac                  # macOS 전용 배포  ← 이 문서의 주제
 release-android              # Android 전용 배포 (해당 시)
 macos_companion/             # 또는 mac/, macos/ 등
   ├─ <Target>/Info.plist
@@ -35,32 +35,17 @@ macos_companion/             # 또는 mac/, macos/ 등
   └─ build/<App Name>.app    # 빌드 산출물
 ```
 
----
-
-## 버전 관리: `VERSION` + `bump-version`
-
-레포 루트의 `VERSION` 파일은 **semver 한 줄** (예: `1.2.3`). 모든 플랫폼이 이 semver 를 공유. 빌드 카운터는 **플랫폼 매니페스트가 권위** (macOS: Info.plist `CFBundleVersion`, Android: gradle `versionCode`) 라서 플랫폼별로 독립 증가.
-
-`bump-version` 은 VERSION (semver) 만 갱신하고 self-commit. semver propagate + build +1 은 각 `release-<platform>` 이 빌드 직전에 처리. 자세히는 → [bump-version.md](./bump-version.md)
-
-이 문서에서 자주 쓰는 명령:
-
-| 명령 | 용도 |
-|------|------|
-| `./bump-version --bump` | 기능 / 버그픽스 동반 (patch +1) |
-| `./bump-version <X.Y.Z>` | semver 명시 (minor / major bump) |
-| `./release-mac` 만 재실행 | semver 동일, build 만 +1 하고 재배포 |
+> 버전 관리(`VERSION` / `bump-version`)는 별도 문서로 분리 → [bump-version.md](./bump-version.md). 이 문서는 이미 결정된 semver 를 어떻게 빌드 / 배포하는지에만 집중한다.
 
 ---
 
 ## `release-mac` 단계별 동작
 
 ```
-1. (옵션) ./bump-version --bump          # --no-bump 면 건너뜀
-2. VERSION 읽어서 Info.plist 갱신:
-     CFBundleShortVersionString = <semver>            (VERSION 으로부터)
-     CFBundleVersion            = <prev build> + 1    (자기 매니페스트로부터 +1)
-   변경 있을 때만 커밋 ("Bump macOS to v<semver> (build <build>)")
+1. 버전 결정 (옵션) — bump-version 호출, --no-bump 로 건너뛰기 가능
+2. semver → Info.plist propagate + build 카운터 +1, 변경 있을 때만 커밋
+     CFBundleShortVersionString = <semver>
+     CFBundleVersion            = <prev build> + 1
 3. 빌드: (cd <mac-dir> && bash build.sh)
 4. 패킹: ditto -c -k --keepParent --sequesterRsrc \
             "<App>.app" "<App>-<ver>.zip"
@@ -70,8 +55,6 @@ macos_companion/             # 또는 mac/, macos/ 등
    (이미 존재하면 gh release upload --clobber + edit --draft=false)
 7. homebrew-tap 클론 → Casks/<slug>.rb 작성 → 커밋 → push
 ```
-
-핵심: build 카운터는 **매니페스트에서 읽어 +1** — VERSION 에 의존하지 않음. 다른 플랫폼이 따로 가도 무관.
 
 릴리스가 먼저 만들어지고 cask 파일이 나중에 push 되기 때문에, mirror 워크플로가 fire 됐을 때 cask 의 download URL 은 항상 유효하다.
 
@@ -162,17 +145,12 @@ end
 # 1. 코드/스크립트 변경 커밋
 git add ... && git commit -m "..."
 
-# 2. semver 결정 (필요한 경우만)
-./bump-version --bump              # 기능/버그픽스 → patch +1
-./bump-version 2.0.0               # minor / major 변경
-#  (슬러그/배포 스크립트만 바꾼 재배포라면 semver 그대로 두고 2번 건너뜀)
+# 2. (semver 변경이 필요하면 bump-version.md 참고)
 
-# 3. 빌드 + 배포 (mac 만) — build 카운터는 매니페스트에서 +1 됨
-./release-mac --no-bump            # semver 안 바꿀 때
-./release-mac                      # 동시에 bump-version --bump
-
-#    혹은 전체 (mac + android) — 각 플랫폼이 자기 build +1
-./release                          # 내부적으로 bump-version --bump 호출하므로 2번 건너뜀
+# 3. 빌드 + 배포
+./release-mac --no-bump            # semver 그대로 두고 build +1 재배포
+./release-mac                      # 동시에 semver bump
+./release                          # mac + android 전체
 ```
 
 릴리스 후 확인:
@@ -200,7 +178,7 @@ brew upgrade --cask <slug>
 
 ## 새 macOS 앱을 이 패턴에 추가하는 절차
 
-1. 앱 레포에 `VERSION`, `bump-version`, `release-mac`, `<mac-dir>/build.sh` 를 본 패턴대로 만든다 (기존 앱 것을 복사해서 슬러그만 바꾸면 됨)
+1. 앱 레포에 `release-mac`, `<mac-dir>/build.sh` 를 본 패턴대로 만든다 (기존 앱 것을 복사해서 슬러그만 바꾸면 됨). 버전 파이프라인(`VERSION`, `bump-version`) 설정은 [bump-version.md](./bump-version.md) 참고.
 2. `release-mac` 의 컨벤션 4개 (cask 이름, 태그 prefix, zip 이름, cask 내 URL) 가 모두 같은 슬러그를 쓰는지 검사
 3. `<org>/homebrew-tap` 에:
    - `Casks/<new-slug>.rb` (최초 1회는 첫 release 가 자동 생성)
@@ -217,13 +195,11 @@ brew upgrade --cask <slug>
 - **Sequester rsrc 옵션 필수**. `ditto -c -k --keepParent --sequesterRsrc` 가 핵심. Finder 의 압축이나 zip 명령은 macOS 메타데이터를 잃을 수 있어 cask 가 못 푼다.
 - **xattr 제거는 사용자 신뢰의 대가**. brew 가 sha256 으로 무결성을 보장한다는 가정 하에서만 정당. 다른 채널로 zip 뿌리지 말 것.
 
-VERSION / bump-version 관련 함정은 [bump-version.md](./bump-version.md#함정과-교훈) 참고.
-
 ---
 
 ## 참고 위치
 
 - 패턴 적용 레포: `~/work/airplay_touch`, `~/work/audiocast`, `~/work/audiocast-driver`
-- 주요 스크립트: `{release, release-mac, release-android, bump-version, VERSION}`
+- 주요 스크립트: `{release, release-mac}` (버전 파이프라인은 bump-version.md)
 - Tap 레포: <https://github.com/jobtools/homebrew-tap>
 - Legacy tap 예: <https://github.com/jobtools/homebrew-airplay-touch>
