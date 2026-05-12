@@ -60,54 +60,7 @@ macos_companion/             # 또는 mac/, macos/ 등
 
 ---
 
-## Universal binary (arm64 + x86_64)
-
-cask 로 배포되는 zip 한 개로 Apple Silicon / Intel 양쪽을 커버하려면 **fat binary** 가 필요. Swift Package Manager 기본 동작은 host arch 만 빌드하므로 의도하지 않게 단일 arch 만 배포될 수 있다.
-
-### Pitfall
-
-```bash
-swift build -c release            # ⚠️ host arch 만 (Apple Silicon 에서 빌드 시 arm64 only)
-```
-
-이 결과를 그대로 cask 에 올리면 Intel Mac 사용자는 설치는 되어도 실행 안 됨 (Rosetta 없이).
-
-### 올바른 빌드
-
-```bash
-swift build -c release --arch arm64 --arch x86_64
-# 출력 위치가 바뀐다: .build/release/ → .build/apple/Products/Release/
-```
-
-`build.sh` 의 빌드 명령과 바이너리 복사 경로 둘 다 갱신:
-
-```bash
-swift build -c release --arch arm64 --arch x86_64
-# ...
-cp ".build/apple/Products/Release/${BUNDLE_NAME}" "${APP_BUNDLE}/Contents/MacOS/${BUNDLE_NAME}"
-```
-
-### 검증
-
-```bash
-file <app>.app/Contents/MacOS/<bin>
-# 기대: Mach-O universal binary with 2 architectures: [x86_64...] [arm64]
-
-lipo -info <app>.app/Contents/MacOS/<bin>
-# 기대: Architectures in the fat file: ... are: x86_64 arm64
-```
-
-### macOS deployment target 확인
-
-`Package.swift` 의 `.macOS(.vNN)` 가 cask 의 `depends_on macos:` 와 일치하는지 확인. 너무 낮으면 신규 API 사용 시 컴파일 실패, 너무 높으면 Intel Mac 지원이 좁아질 수 있다 (예: macOS 15 Sequoia 는 2019 이전 Intel Mac drop).
-
-### 의존성도 universal 인지 확인
-
-SPM 외부 의존성 (특히 pre-built XCFramework 가 있는 SDK) 는 fat 가 아닐 수 있다. 빌드 후 의존성 dylib 도 `lipo -info` 로 확인.
-
-```bash
-find <app>.app -name '*.dylib' -exec lipo -info {} \;
-```
+> 빌드 단계에서 arm64 + x86_64 양쪽 커버하는 fat binary 만들기는 별도 문서 → [macos-universal-binary.md](./macos-universal-binary.md). `swift build -c release` 만 호출하면 host arch only 라는 함정 + 검증 명령 + deployment target 정합성까지.
 
 ---
 
@@ -245,7 +198,7 @@ brew upgrade --cask <slug>
 - **순서 중요**: cask 푸시 전에 release 가 존재해야 한다. `release-mac` 은 이 순서를 지키지만 직접 수정할 때 헷갈리지 말 것.
 - **Sequester rsrc 옵션 필수**. `ditto -c -k --keepParent --sequesterRsrc` 가 핵심. Finder 의 압축이나 zip 명령은 macOS 메타데이터를 잃을 수 있어 cask 가 못 푼다.
 - **xattr 제거는 사용자 신뢰의 대가**. brew 가 sha256 으로 무결성을 보장한다는 가정 하에서만 정당. 다른 채널로 zip 뿌리지 말 것.
-- **Universal binary 잊지 말 것**. `swift build -c release` 만 호출하면 host arch 만 빌드됨 (Apple Silicon 빌더 → arm64 only → Intel Mac 사용자 실행 불가). `--arch arm64 --arch x86_64` 명시 + 출력 경로 `.build/apple/Products/Release/` 로 변경. 자세히는 위 섹션.
+- **Universal binary 잊지 말 것**. `swift build -c release` 만 호출하면 host arch 만 빌드됨 (Apple Silicon 빌더 → arm64 only → Intel Mac 사용자 실행 불가). 자세히는 [macos-universal-binary.md](./macos-universal-binary.md).
 
 ---
 
