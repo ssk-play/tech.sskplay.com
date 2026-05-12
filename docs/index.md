@@ -2,7 +2,7 @@
 ---
 # tech.sskplay.com
 
-- [맥-홈브루-배포](./맥-홈브루-배포/)
-- [맥-유니버설-바이너리](./맥-유니버설-바이너리/)
-- [버전-단일소스](./버전-단일소스/)
-- [홈브루-탭-미러링](./홈브루-탭-미러링/)
+- [macos-brew-deploy](./macos-brew-deploy/)
+- [macos-universal-binary](./macos-universal-binary/)
+- [bump-version](./bump-version/)
+- [homebrew-tap-mirror](./homebrew-tap-mirror/)
