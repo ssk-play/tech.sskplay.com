@@ -1,3 +1,5 @@
+---
+---
 # macOS Universal Binary (arm64 + x86_64)
 
 하나의 `.app` 으로 Apple Silicon 과 Intel Mac 양쪽을 커버하기 위한 fat binary 빌드 패턴. Swift Package Manager 기본 동작이 host arch 만 빌드하기 때문에 의도하지 않게 단일 arch 배포가 되기 쉽다.

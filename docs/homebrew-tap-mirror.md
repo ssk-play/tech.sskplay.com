@@ -1,3 +1,5 @@
+---
+---
 # Homebrew Tap 미러링
 
 멀티-캐스크 tap 에 있는 cask 파일을 별도 single-cask tap 으로 자동 복제하는 패턴.

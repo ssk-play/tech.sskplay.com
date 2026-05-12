@@ -1,0 +1,13 @@
+title: tech.sskplay.com
+description: 기술 메모 / 작업 노트
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+exclude:
+  - CLAUDE.md

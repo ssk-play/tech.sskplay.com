@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% if page.path != "README.md" %}{{ page.path | replace: '.md', '' }} · {% endif %}{{ site.title }}</title>
+<script>try{if(localStorage.getItem('crt-off')==='1')document.documentElement.classList.add('crt-off')}catch(e){}</script>
+<link rel="stylesheet" href="{{ '/assets/css/crt.css' | relative_url }}">
+</head>
+<body>
+  <div class="crt">
+    <div class="crt__screen">
+      <header class="crt__header">
+        <a href="{{ '/' | relative_url }}">ssk@tech:~$</a> cat {{ page.path }}
+      </header>
+      <main class="crt__content">
+        {{ content }}
+      </main>
+    </div>
+    <div class="crt__overlay" aria-hidden="true"></div>
+    <div class="crt__vignette" aria-hidden="true"></div>
+  </div>
+  <button class="crt__toggle" type="button" aria-pressed="true" title="Toggle CRT shader">CRT</button>
+  <script src="{{ '/assets/js/crt-toggle.js' | relative_url }}"></script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+:root {
+  --crt-bg: #000;
+  --crt-fg: #33ff66;
+  --crt-fg-bright: #b9ffce;
+  --crt-fg-dim: #1a8033;
+  --crt-link: #7dffaa;
+  --crt-glow: rgba(51, 255, 102, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--crt-bg);
+  color: var(--crt-fg);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+body {
+  text-shadow: 0 0 1px currentColor, 0 0 6px var(--crt-glow);
+}
+
+.crt {
+  position: relative;
+  min-height: 100vh;
+}
+
+.crt__screen {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 6rem;
+  position: relative;
+  z-index: 1;
+}
+
+.crt__header {
+  border-bottom: 1px dashed var(--crt-fg-dim);
+  padding-bottom: 0.75rem;
+  margin-bottom: 2rem;
+  font-size: 0.85rem;
+  color: var(--crt-fg-dim);
+}
+
+.crt__header a {
+  color: var(--crt-fg);
+  text-decoration: none;
+}
+
+.crt__header a:hover { color: var(--crt-fg-bright); }
+
+.crt__content::after {
+  content: '_';
+  display: inline-block;
+  margin-left: 0.25em;
+  color: var(--crt-fg-bright);
+  animation: blink 1s steps(2) infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--crt-fg-bright);
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+  line-height: 1.3;
+}
+
+h1 { font-size: 1.55rem; }
+h2 { font-size: 1.2rem; margin-top: 2.25rem; }
+h3 { font-size: 1.05rem; }
+h4, h5, h6 { font-size: 1rem; }
+
+h1::before, h2::before, h3::before { color: var(--crt-fg-dim); }
+h1::before { content: '# '; }
+h2::before { content: '## '; }
+h3::before { content: '### '; }
+
+a {
+  color: var(--crt-link);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  background: var(--crt-link);
+  color: var(--crt-bg);
+  text-decoration: none;
+}
+
+p, ul, ol, blockquote { margin: 0.75rem 0; }
+ul, ol { padding-left: 1.5rem; }
+li { margin: 0.2rem 0; }
+ul li::marker { color: var(--crt-fg-dim); }
+
+strong { color: var(--crt-fg-bright); }
+em { color: var(--crt-fg-bright); font-style: italic; }
+
+code, pre, kbd, samp {
+  font-family: inherit;
+  color: var(--crt-fg-bright);
+}
+
+code {
+  background: rgba(51, 255, 102, 0.08);
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+}
+
+pre {
+  background: rgba(51, 255, 102, 0.04);
+  border-left: 2px solid var(--crt-fg-dim);
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.highlight, .highlight pre { background: transparent !important; }
+.highlight * { color: var(--crt-fg-bright) !important; }
+
+table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+  font-size: 0.95em;
+}
+
+th, td {
+  border: 1px solid var(--crt-fg-dim);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+}
+
+th { color: var(--crt-fg-bright); background: rgba(51, 255, 102, 0.05); }
+
+hr {
+  border: 0;
+  border-top: 1px dashed var(--crt-fg-dim);
+  margin: 2rem 0;
+}
+
+blockquote {
+  border-left: 2px solid var(--crt-fg-dim);
+  padding-left: 1rem;
+  color: var(--crt-fg-dim);
+  margin-left: 0;
+}
+
+img { max-width: 100%; filter: hue-rotate(80deg) saturate(0.6); }
+
+::selection { background: var(--crt-fg); color: var(--crt-bg); }
+
+/* CRT shader overlays */
+.crt__overlay,
+.crt__vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crt__overlay {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.35) 3px
+  );
+  mix-blend-mode: multiply;
+  animation: flicker 3s infinite;
+}
+
+.crt__vignette {
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
+  z-index: 11;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  3%       { opacity: 0.85; }
+  6%       { opacity: 1; }
+  47%      { opacity: 1; }
+  49%      { opacity: 0.92; }
+  51%      { opacity: 1; }
+}
+
+/* OFF state — kill shader effects, keep green-on-black */
+html.crt-off body { text-shadow: none; }
+html.crt-off .crt__overlay,
+html.crt-off .crt__vignette { display: none; }
+
+.crt__toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  background: var(--crt-bg);
+  color: var(--crt-fg);
+  border: 1px solid var(--crt-fg-dim);
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  text-shadow: 0 0 4px var(--crt-glow);
+}
+
+.crt__toggle:hover {
+  background: var(--crt-fg);
+  color: var(--crt-bg);
+  text-shadow: none;
+}
+
+.crt__toggle::before {
+  content: '● ';
+  color: var(--crt-fg);
+}
+
+html.crt-off .crt__toggle { text-shadow: none; }
+html.crt-off .crt__toggle::before { content: '○ '; color: var(--crt-fg-dim); }
+
+@media (max-width: 600px) {
+  html, body { font-size: 14px; }
+  .crt__screen { padding: 1.25rem 1rem 5rem; }
+}

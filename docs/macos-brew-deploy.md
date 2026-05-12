@@ -1,3 +1,5 @@
+---
+---
 # macOS 에이전트 Homebrew 배포 패턴
 
 셀프-사인된 macOS 동반 앱(에이전트)을 Apple 공증 없이 사용자에게 안정적으로 전달하기 위한 배포 패턴 정리. 현재 `airplay-touch`, `audiocast`, `audiocast-driver` 가 이 패턴을 공유한다.

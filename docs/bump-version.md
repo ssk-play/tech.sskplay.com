@@ -1,3 +1,5 @@
+---
+---
 # `bump-version` 스크립트 + `VERSION` 파일 설계
 
 다중 플랫폼 (macOS / Android / iOS / 그 외) 으로 같은 앱을 배포할 때 **semver 만** 한 곳에서 관리하기 위한 패턴. 빌드 카운터는 플랫폼마다 독립.
