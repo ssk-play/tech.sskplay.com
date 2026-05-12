@@ -13,7 +13,7 @@
     <div class="crt__screen">
       <header class="crt__header">
         <span class="crt__prompt"><a href="{{ '/' | relative_url }}">ssk@tech:~$</a> {% if page.path == 'index.md' %}ls docs/{% else %}cat {{ page.path }}{% endif %}</span>
-        {% if site.goatcounter %}<span class="crt__views" data-counter="https://{{ site.goatcounter }}.goatcounter.com"></span>{% endif %}
+        {% if site.goatcounter %}<img class="crt__views" src="https://{{ site.goatcounter }}.goatcounter.com/counter/{{ page.url | url_encode }}.svg" alt="" onerror="this.style.display='none'">{% endif %}
       </header>
       <main class="crt__content">
         {{ content }}
@@ -25,6 +25,5 @@
   </div>
   <button class="crt__toggle" type="button" aria-pressed="true" title="Toggle CRT shader">CRT</button>
   <script src="{{ '/assets/js/crt-toggle.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/views.js' | relative_url }}"></script>
 </body>
 </html>

@@ -54,10 +54,10 @@ body {
 }
 
 .crt__views {
-  color: var(--crt-fg-dim);
-  font-size: 0.85em;
-  white-space: nowrap;
-  min-height: 1em;
+  height: 1.8em;
+  width: auto;
+  opacity: 0.55;
+  flex: 0 0 auto;
 }
 
 .crt__header a {
