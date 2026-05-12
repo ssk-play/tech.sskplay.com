@@ -6,12 +6,14 @@
 <title>{% if page.path != "index.md" %}{{ page.path | replace: '.md', '' }} · {% endif %}{{ site.title }}</title>
 <script>try{if(localStorage.getItem('crt-off')==='1')document.documentElement.classList.add('crt-off')}catch(e){}</script>
 <link rel="stylesheet" href="{{ '/assets/css/crt.css' | relative_url }}">
+{% if site.goatcounter %}<script data-goatcounter="https://{{ site.goatcounter }}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>{% endif %}
 </head>
 <body>
   <div class="crt">
     <div class="crt__screen">
       <header class="crt__header">
-        <a href="{{ '/' | relative_url }}">ssk@tech:~$</a> {% if page.path == 'index.md' %}ls docs/{% else %}cat {{ page.path }}{% endif %}
+        <span class="crt__prompt"><a href="{{ '/' | relative_url }}">ssk@tech:~$</a> {% if page.path == 'index.md' %}ls docs/{% else %}cat {{ page.path }}{% endif %}</span>
+        {% if site.goatcounter %}<span class="crt__views" data-counter="https://{{ site.goatcounter }}.goatcounter.com"></span>{% endif %}
       </header>
       <main class="crt__content">
         {{ content }}
@@ -23,5 +25,6 @@
   </div>
   <button class="crt__toggle" type="button" aria-pressed="true" title="Toggle CRT shader">CRT</button>
   <script src="{{ '/assets/js/crt-toggle.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/views.js' | relative_url }}"></script>
 </body>
 </html>

@@ -42,11 +42,22 @@ body {
 }
 
 .crt__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
   border-bottom: 1px dashed var(--crt-fg-dim);
   padding-bottom: 0.75rem;
   margin-bottom: 2rem;
   font-size: 0.85rem;
   color: var(--crt-fg-dim);
+}
+
+.crt__views {
+  color: var(--crt-fg-dim);
+  font-size: 0.85em;
+  white-space: nowrap;
+  min-height: 1em;
 }
 
 .crt__header a {
