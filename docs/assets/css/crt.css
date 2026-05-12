@@ -21,7 +21,11 @@ html, body {
 }
 
 body {
-  text-shadow: 0 0 1px currentColor, 0 0 6px var(--crt-glow);
+  text-shadow:
+    -0.5px 0 0 rgba(255, 60, 80, 0.35),
+    0.5px 0 0 rgba(80, 200, 255, 0.35),
+    0 0 1px currentColor,
+    0 0 6px var(--crt-glow);
 }
 
 .crt {
@@ -180,8 +184,22 @@ img { max-width: 100%; filter: hue-rotate(80deg) saturate(0.6); }
 }
 
 .crt__vignette {
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
+  background:
+    radial-gradient(ellipse 80% 75% at center, transparent 35%, rgba(0, 0, 0, 0.55) 75%, rgba(0, 0, 0, 0.95) 100%);
   z-index: 11;
+}
+
+.crt__bezel {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+  border-radius: 2.5rem;
+  box-shadow:
+    inset 0 0 0 6px #000,
+    inset 0 0 40px 18px rgba(0, 0, 0, 0.9),
+    inset 0 0 120px 70px rgba(0, 12, 5, 0.55),
+    inset 0 0 220px 120px rgba(0, 0, 0, 0.45);
 }
 
 @keyframes flicker {
@@ -196,12 +214,13 @@ img { max-width: 100%; filter: hue-rotate(80deg) saturate(0.6); }
 /* OFF state — kill shader effects, keep green-on-black */
 html.crt-off body { text-shadow: none; }
 html.crt-off .crt__overlay,
-html.crt-off .crt__vignette { display: none; }
+html.crt-off .crt__vignette,
+html.crt-off .crt__bezel { display: none; }
 
 .crt__toggle {
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
+  right: 1.5rem;
+  bottom: 1.5rem;
   z-index: 20;
   background: var(--crt-bg);
   color: var(--crt-fg);
