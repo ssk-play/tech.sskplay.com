@@ -11,7 +11,7 @@
   <div class="crt">
     <div class="crt__screen">
       <header class="crt__header">
-        <a href="{{ '/' | relative_url }}">ssk@tech:~$</a> cat {{ page.path }}
+        <a href="{{ '/' | relative_url }}">ssk@tech:~$</a> {% if page.path == 'index.md' %}ls docs/{% else %}cat {{ page.path }}{% endif %}
       </header>
       <main class="crt__content">
         {{ content }}
