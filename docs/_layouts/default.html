@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if page.path != "index.md" %}{{ page.path | replace: '.md', '' }} · {% endif %}{{ site.title }}</title>
+<link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
 <script>try{if(localStorage.getItem('crt-off')==='1')document.documentElement.classList.add('crt-off')}catch(e){}</script>
 <link rel="stylesheet" href="{{ '/assets/css/crt.css' | relative_url }}">
 {% if site.goatcounter %}<script data-goatcounter="https://{{ site.goatcounter }}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>{% endif %}
