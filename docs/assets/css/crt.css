@@ -139,6 +139,40 @@ pre code {
   padding: 0;
 }
 
+pre.has-copy { position: relative; }
+
+.crt__copy {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  line-height: 1;
+  background: var(--crt-bg);
+  color: var(--crt-fg-dim);
+  border: 1px solid var(--crt-fg-dim);
+  border-radius: 2px;
+  padding: 0.2rem 0.45rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+pre.has-copy:hover .crt__copy,
+.crt__copy:focus { opacity: 0.9; }
+
+.crt__copy:hover { background: var(--crt-fg); color: var(--crt-bg); }
+
+.crt__copy.is-copied {
+  color: var(--crt-fg-bright);
+  border-color: var(--crt-fg);
+  opacity: 0.9;
+}
+
+@media (hover: none) {
+  .crt__copy { opacity: 0.65; }
+}
+
 .highlight, .highlight pre { background: transparent !important; }
 .highlight * { color: var(--crt-fg-bright) !important; }
 
