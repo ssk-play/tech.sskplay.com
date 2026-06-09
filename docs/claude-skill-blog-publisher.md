@@ -8,6 +8,33 @@ Claude 를 쓰다 배운 걸 그때그때 블로그에 남기고 싶다. 매번 
 
 대상은 `<org>/<repo>` 의 GitHub Pages (Jekyll, `main` 브랜치 `/docs` 경로) 블로그다.
 
+## 새 컴퓨터에서 처음 세팅
+
+새 머신에서 이 skill 을 쓰려면 세 가지만 갖추면 된다. skill source 는 블로그 repo 안(`<repo>/skill/<name>/`)에 있고, 글로벌 위치는 거기로의 symlink 다.
+
+```bash
+# 1. 의존성 + 인증 (PAT 은 OS keychain 에 저장됨)
+brew install gh jq
+gh auth login
+
+# 2. 블로그 repo clone (위치는 어디든)
+gh repo clone <org>/<repo> ~/work/<repo>
+
+# 3. skill 을 글로벌 위치로 symlink
+ln -s ~/work/<repo>/skill/<name> ~/.claude/skills/<name>
+```
+
+이걸로 끝이다. 새 Claude 세션에서 skill 이 잡힌다. 다른 머신은 `git pull` 만 하면 symlink 가 최신 skill 을 가리키니, 세팅은 머신당 한 번뿐이다.
+
+skill 폴더를 Pages source(`/docs`) 바깥에 두는 것만 지키면 된다. 그래야 사이트 빌드에 끌려 들어가지 않는다. 이렇게 repo 에 동봉하면 skill 수정이 글과 **같은 커밋 흐름**으로 버전 관리되고, 비밀이 없어 그냥 커밋해도 안전하다(인증은 아래처럼 `gh` 에 위임).
+
+매 호출 첫 단계에 preflight 를 둬서 세팅이 덜 된 머신에서도 친절하게 멈추게 한다.
+
+```bash
+command -v gh jq >/dev/null 2>&1 || { echo "need: gh, jq"; exit 1; }
+gh auth status >/dev/null 2>&1 || { echo "run: gh auth login"; exit 1; }
+```
+
 ## CRUD 는 GitHub Contents API 한 겹으로
 
 `gh` CLI 가 이미 인증돼 있으니 글 조작은 Contents API 직접 호출로 끝난다. clone·로컬 작업트리 없이 commit + push 까지 한 호출에 일어난다.
@@ -45,27 +72,6 @@ base64 < /tmp/post.md | tr -d '\n'
 ## 인증은 gh 에 위임 — skill 에 비밀 없음
 
 skill 파일엔 토큰을 절대 넣지 않는다. 인증은 전적으로 `gh` 에 맡긴다 — PAT 은 OS keychain 에 있고 skill 은 `gh api` 를 부를 뿐이다. 그래서 **skill 파일 자체엔 비밀이 없어 그냥 복사하거나 git 에 커밋해도 안전**하다.
-
-매 호출 첫 단계에 preflight 를 둬 새 머신에서도 친절하게 멈추게 한다.
-
-```bash
-command -v gh jq >/dev/null 2>&1 || { echo "need: gh, jq"; exit 1; }
-gh auth status >/dev/null 2>&1 || { echo "run: gh auth login"; exit 1; }
-```
-
-## skill 은 블로그 repo 에 동봉한다
-
-이 skill 은 특정 블로그 전용이다. 그래서 source 를 블로그 repo 안(`<repo>/skill/<name>/`)에 두고, 글로벌 위치는 거기로의 symlink 로 만든다.
-
-```bash
-ln -s <repo>/skill/<name> ~/.claude/skills/<name>
-```
-
-- skill 수정이 글과 **같은 커밋 흐름**으로 버전 관리된다.
-- 새 머신 설치가 세 줄이다 — `clone` → `ln -s` → `gh auth login`.
-- 다른 머신은 `git pull` 만 하면 symlink 가 최신 skill 을 가리킨다.
-
-skill 폴더는 Pages source(`/docs`) 바깥에 두는 것만 지킨다. 그래야 빌드에 끌려 들어가지 않는다.
 
 ## 운영 메모
 
