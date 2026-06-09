@@ -10,32 +10,25 @@ Claude 를 쓰다 배운 걸 그때그때 블로그에 남기고 싶다. 매번 
 
 ## 새 컴퓨터에서 처음 세팅
 
-새 머신에서 이 skill 을 쓰려면 세 가지만 갖추면 된다. skill source 는 블로그 repo 안(`<repo>/skill/<name>/`)에 있고, 글로벌 위치는 거기로의 symlink 다.
+skill source 는 블로그 repo 안(`<repo>/skill/<name>/`)에 있고, 글로벌 위치는 거기로의 symlink 다. 두 단계면 된다.
+
+**1. 저장소를 클론한다.**
 
 ```bash
-# 1. 의존성 + 인증 (PAT 은 OS keychain 에 저장됨)
-brew install gh jq
-gh auth login
+gh repo clone <org>/<repo>
+```
 
-# 2. 블로그 repo clone (위치는 어디든)
-gh repo clone <org>/<repo> ~/work/<repo>
+**2. Claude 를 실행하고 아래 프롬프트를 던진다.**
 
-# 3. skill 을 글로벌 위치로 symlink
-ln -s ~/work/<repo>/skill/<name> ~/.claude/skills/<name>
+```
+방금 클론한 저장소의 skill/<name>/ 을 참조해서, 이 컴퓨터에 <name> skill 을 세팅해줘.
+- gh, jq 설치 확인 — 없으면 brew install gh jq
+- gh auth status 확인 — 안 돼 있으면 gh auth login 하라고 안내
+- 클론한 저장소의 skill/<name> 을 ~/.claude/skills/<name> 로 symlink
+끝나면 새 세션에서 /<name> 으로 쓸 수 있다고 알려줘.
 ```
 
 이걸로 끝이다. 새 Claude 세션에서 skill 이 잡힌다. 다른 머신은 `git pull` 만 하면 symlink 가 최신 skill 을 가리키니, 세팅은 머신당 한 번뿐이다.
-
-손으로 칠 것 없이 새 Claude 세션에 아래 프롬프트를 그대로 붙여넣으면 알아서 세팅한다 (`<org>/<repo>/<name>` 만 본인 값으로 바꾼다):
-
-```
-이 컴퓨터에 <name> 블로그 publish skill 을 세팅해줘.
-1. gh, jq 설치 확인 — 없으면 brew install gh jq
-2. gh auth status 확인 — 안 돼 있으면 gh auth login 하라고 안내
-3. <org>/<repo> 를 ~/work/<repo> 에 clone (이미 있으면 git pull)
-4. ln -s ~/work/<repo>/skill/<name> ~/.claude/skills/<name>
-끝나면 새 세션에서 /<name> 으로 쓸 수 있다고 알려줘.
-```
 
 skill 폴더를 Pages source(`/docs`) 바깥에 두는 것만 지키면 된다. 그래야 사이트 빌드에 끌려 들어가지 않는다. 이렇게 repo 에 동봉하면 skill 수정이 글과 **같은 커밋 흐름**으로 버전 관리되고, 비밀이 없어 그냥 커밋해도 안전하다(인증은 아래처럼 `gh` 에 위임).
 
