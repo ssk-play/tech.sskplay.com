@@ -26,6 +26,17 @@ ln -s ~/work/<repo>/skill/<name> ~/.claude/skills/<name>
 
 이걸로 끝이다. 새 Claude 세션에서 skill 이 잡힌다. 다른 머신은 `git pull` 만 하면 symlink 가 최신 skill 을 가리키니, 세팅은 머신당 한 번뿐이다.
 
+손으로 칠 것 없이 새 Claude 세션에 아래 프롬프트를 그대로 붙여넣으면 알아서 세팅한다 (`<org>/<repo>/<name>` 만 본인 값으로 바꾼다):
+
+```
+이 컴퓨터에 <name> 블로그 publish skill 을 세팅해줘.
+1. gh, jq 설치 확인 — 없으면 brew install gh jq
+2. gh auth status 확인 — 안 돼 있으면 gh auth login 하라고 안내
+3. <org>/<repo> 를 ~/work/<repo> 에 clone (이미 있으면 git pull)
+4. ln -s ~/work/<repo>/skill/<name> ~/.claude/skills/<name>
+끝나면 새 세션에서 /<name> 으로 쓸 수 있다고 알려줘.
+```
+
 skill 폴더를 Pages source(`/docs`) 바깥에 두는 것만 지키면 된다. 그래야 사이트 빌드에 끌려 들어가지 않는다. 이렇게 repo 에 동봉하면 skill 수정이 글과 **같은 커밋 흐름**으로 버전 관리되고, 비밀이 없어 그냥 커밋해도 안전하다(인증은 아래처럼 `gh` 에 위임).
 
 매 호출 첫 단계에 preflight 를 둬서 세팅이 덜 된 머신에서도 친절하게 멈추게 한다.
