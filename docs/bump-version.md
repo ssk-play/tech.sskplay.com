@@ -1,4 +1,6 @@
 ---
+title: "bump-version 스크립트 + VERSION 파일 설계"
+date: 2026-05-11T19:28:49+09:00
 ---
 # `bump-version` 스크립트 + `VERSION` 파일 설계
 

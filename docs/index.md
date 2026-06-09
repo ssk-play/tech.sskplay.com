@@ -1,8 +1,8 @@
 ---
+title: tech.sskplay.com
 ---
 # tech.sskplay.com
 
-- [macos-brew-deploy](./macos-brew-deploy/)
-- [macos-universal-binary](./macos-universal-binary/)
-- [bump-version](./bump-version/)
-- [homebrew-tap-mirror](./homebrew-tap-mirror/)
+{% assign posts = site.pages | where_exp:"p","p.title and p.url != '/'" | sort:"date" | reverse %}
+{% for p in posts %}- [{{ p.title }}]({{ p.url | relative_url }}){% if p.date %} <span class="crt__date">— {{ p.date | date: "%Y-%m-%d" }}</span>{% endif %}
+{% endfor %}

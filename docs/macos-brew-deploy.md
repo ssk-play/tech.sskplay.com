@@ -1,4 +1,6 @@
 ---
+title: "macOS 에이전트 Homebrew 배포 패턴"
+date: 2026-05-11T19:19:41+09:00
 ---
 # macOS 에이전트 Homebrew 배포 패턴
 

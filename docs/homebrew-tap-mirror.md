@@ -1,4 +1,6 @@
 ---
+title: "Homebrew Tap 미러링"
+date: 2026-05-11T19:35:49+09:00
 ---
 # Homebrew Tap 미러링
 

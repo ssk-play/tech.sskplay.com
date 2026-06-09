@@ -1,4 +1,6 @@
 ---
+title: "macOS Universal Binary (arm64 + x86_64)"
+date: 2026-05-12T11:01:47+09:00
 ---
 # macOS Universal Binary (arm64 + x86_64)
 
