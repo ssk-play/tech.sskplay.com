@@ -38,3 +38,15 @@ ln -s ~/work/tech.sskplay.com/skill/blog ~/.claude/skills/blog
 - 모든 동작은 GitHub Contents API (`PUT`/`GET`/`DELETE /contents/docs/<slug>.md`)
 - 비밀 없음 — 인증은 `gh` (Keychain). 스킬 파일은 그냥 복사해도 안전
 - 홈 인덱스(`docs/index.md`)는 Liquid 가 front matter 를 자동 순회 — 글 추가 시 인덱스 손댈 필요 없음
+
+## iOS 심사 탈락 사례
+
+- [ios-review-ai-china-storefront.md](./docs/ios-review-ai-china-storefront.md) — AI 앱의 중국 본토 배포
+- [ios-review-ai-age-rating.md](./docs/ios-review-ai-age-rating.md) — AI 답변과 연령 등급이 달랐다
+- [ios-review-third-party-login.md](./docs/ios-review-third-party-login.md) — Google 로그인만 제공했다
+- [ios-review-account-deletion.md](./docs/ios-review-account-deletion.md) — 계정 생성은 되는데 삭제가 없었다
+- [ios-review-apple-login-button.md](./docs/ios-review-apple-login-button.md) — Apple 로그인 로고를 직접 그렸다
+- [ios-review-rom-rights-and-sample.md](./docs/ios-review-rom-rights-and-sample.md) — ROM의 권리와 테스트 파일이 빠졌다
+- [ios-review-paste-keyboard.md](./docs/ios-review-paste-keyboard.md) — 키보드 때문에 링크를 붙여넣지 못했다
+- [ios-review-att-prompt.md](./docs/ios-review-att-prompt.md) — 추적 권한 팝업이 나타나지 않았다
+- [ios-review-lottery-age-rating.md](./docs/ios-review-lottery-age-rating.md) — 로또 도구도 도박 항목 확인이 필요했다
