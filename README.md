@@ -41,6 +41,8 @@ ln -s ~/work/tech.sskplay.com/skill/blog ~/.claude/skills/blog
 
 ## iOS 심사 탈락 사례
 
+- [ios-review-spam-app-generation.md](./docs/ios-review-spam-app-generation.md) — 유사 앱·생성 서비스 판정과 제품 차별성 답변
+
 - [ios-review-ai-china-storefront.md](./docs/ios-review-ai-china-storefront.md) — AI 앱의 중국 본토 배포
 - [ios-review-ai-age-rating.md](./docs/ios-review-ai-age-rating.md) — AI 답변과 연령 등급이 달랐다
 - [ios-review-third-party-login.md](./docs/ios-review-third-party-login.md) — Google 로그인만 제공했다
